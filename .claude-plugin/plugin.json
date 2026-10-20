@@ -1,22 +1,11 @@
 {
-  "name": "day-trader-skill",
-  "description": "11 Claude skills for day trading: scan thousands of charts, track breaking news, time every entry and exit, and replay every outcome before you risk a dollar.",
-  "version": "2.0.0",
-  "author": {
-    "name": "Jake Schincariol",
-    "url": "https://opusjake.ai"
-  },
-  "homepage": "https://github.com/Jakeschincariol/day-trader-skill",
-  "repository": "https://github.com/Jakeschincariol/day-trader-skill",
+  "name": "kc-etf-rebalancer",
+  "description": "KC's long-term ETF toolkit, forked from the Day Trader skill: a portfolio book with two sleeves, a compliance gate for KC's trading rules, a weekly tranche planner in Singapore time, and the 7 AM morning report. Suggestions only; KC places every trade himself.",
+  "version": "0.1.0",
+  "author": {"name": "KC (fork of Jake Schincariol's day-trader-skill)"},
+  "homepage": "https://github.com/kaichaoang/day-trader-skill/tree/kc-etf-rebalancer",
+  "repository": "https://github.com/kaichaoang/day-trader-skill",
   "license": "MIT",
-  "keywords": [
-    "claude-code",
-    "claude-skills",
-    "day-trading",
-    "stock-market",
-    "backtesting",
-    "opening-range-breakout",
-    "paper-trading"
-  ],
+  "keywords": ["claude-skills", "etf", "rebalancing", "portfolio", "compliance", "singapore"],
   "skills": "./"
 }

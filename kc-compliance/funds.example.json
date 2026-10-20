@@ -1,0 +1,23 @@
+{
+  "_comment": "Instrument registry for kc-compliance. 'verified_on' is the date of the holdings data. Re-check constituents and top weight before trading a fund; SOXX is 'strict' (its index has only ~30 names), so stale SOXX data BLOCKs.",
+  "instruments": {
+    "GLDM":   {"type": "commodity", "name": "SPDR Gold MiniShares", "listing": "US"},
+    "SLV":    {"type": "commodity", "name": "iShares Silver Trust", "listing": "US", "no_rebuy": true},
+    "VOO":    {"type": "fund", "name": "Vanguard S&P 500 ETF", "listing": "US",
+               "constituents": 518, "top_weight_pct": 8.39, "top_name": "NVIDIA", "verified_on": "2026-09-30",
+               "max_age_days": 60, "source": "stockanalysis.com/etf/voo/holdings"},
+    "SPYL.L": {"type": "fund", "name": "SPDR S&P 500 UCITS ETF Acc (LSE, USD line)", "listing": "UK",
+               "isin": "IE000XZSV718", "whole_units": true,
+               "constituents": 504, "top_weight_pct": 8.09, "top_name": "NVIDIA", "verified_on": "2026-08-31",
+               "max_age_days": 90, "source": "justetf.com"},
+    "QQQM":   {"type": "fund", "name": "Invesco NASDAQ 100 ETF", "listing": "US",
+               "constituents": 106, "top_weight_pct": 8.06, "top_name": "NVIDIA", "verified_on": "2026-10-15",
+               "max_age_days": 45, "source": "stockanalysis.com/etf/qqqm/holdings"},
+    "SOXX":   {"type": "fund", "name": "iShares Semiconductor ETF", "listing": "US",
+               "constituents": 34, "top_weight_pct": 9.25, "top_name": "AMD", "verified_on": "2026-10-19",
+               "max_age_days": 7, "strict": true, "source": "stockanalysis.com/etf/soxx"},
+    "D05.SI": {"type": "stock", "name": "DBS Group Holdings", "listing": "SG", "sg_security": true,
+               "tradable": false, "why": "KC cannot trade DBS; hold only"},
+    "TSLA":   {"type": "stock", "name": "Tesla (example of a blocked single stock)", "listing": "US"}
+  }
+}

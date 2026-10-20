@@ -1,216 +1,137 @@
-# The Day Trader skill
+# KC's ETF Rebalancer (branch `kc-etf-rebalancer`)
 
-11 Claude skills for day trading: scan thousands of charts, track breaking news, time every entry and exit, and replay every outcome before you risk a dollar.
+A fork of [Jake Schincariol's Day Trader skill](https://github.com/Jakeschincariol/day-trader-skill),
+retuned for a different job: a **long-term ETF portfolio**, rebalanced slowly
+in weekly tranches, for an investor in **Singapore** who must follow an
+employer's personal-trading rules.
 
-Free, MIT, no signup, no API key. The tools are plain Python that read free
-public data: Yahoo Finance charts, Nasdaq Trader's symbol lists, SEC EDGAR
-and the House Clerk.
-
-One scans thousands of charts for setups. Another tracks breaking news on
-every stock you watch. One watches a setup bar by bar and tells you the moment
-to get in, and another sets your stop and your target before you do. And the
-craziest one is the Time Machine: before you risk a dollar, it replays the
-rest of the session 10,000 times from the stock's own recent bars, plus every
-past day the same setup fired, and tells you the honest odds.
-
-And no trade goes through until you say yes. Nothing in this pack can place
-an order on its own. Paper trading is the default.
-
-> **Looking for the original Trader skill?** Copy an investor's 13F, the
-> stock screener, tax lots and rebalancing live in
-> [github.com/Jakeschincariol/trader-skill](https://github.com/Jakeschincariol/trader-skill).
-> This repo is its day-trading sequel: the Trader skill v2.
-
-## Install
-
-Paste this into Claude:
+The `main` branch is the upstream day-trading pack, untouched. This branch
+keeps the pack's style (plain stdlib Python, a `trader/` data folder, a
+SKILL.md per job, offline tests) and swaps the day-trading flow for this one:
 
 ```
-https://github.com/Jakeschincariol/day-trader-skill
-
-install skill
+kc-portfolio value  ->  kc-tranches  ->  kc-compliance  ->  KC places the trade himself
+                         (Mon-Fri plan,    (PASS / PRECLEAR /
+                          Singapore time)   BLOCK)
+kc-morning-report: runs the chain at 7:00 AM SGT and writes the report
+trader-news, trader-alerts: kept from upstream for headlines and price alerts
 ```
 
-Or as a plugin, in Claude Code:
+**Nothing on this branch places an order.** There is no broker connector.
+Every suggestion is checked against KC's rules, and KC reviews it and
+trades at his own broker.
 
-```
-/plugin marketplace add Jakeschincariol/day-trader-skill
-/plugin install day-trader-skill@day-trader-skill
-```
-
-Claude Code namespaces plugin skills, so installed as a plugin they show up as
-`/day-trader-skill:trader-scanner` and so on. Copy the folders instead if you want
-plain `/trader-scanner`:
-
-```bash
-git clone https://github.com/Jakeschincariol/day-trader-skill.git
-cp -r day-trader-skill/trader-* ~/.claude/skills/
-```
-
-Project-local instead of global: copy the same folders into your repo's
-`.claude/skills/`. No Claude Code at all? Paste any single `SKILL.md` at the
-top of a chat and it runs as a mode. You lose the Python tools, but the method
-works.
-
-The tools need Python 3.8 or newer. Nothing to pip install. The SEC tools
-(news filings, the analyst) ask you to identify yourself: put your name and
-email in `trader/config.json` (`"sec_user_agent": "Your Name you@example.com"`)
-or in the `SEC_USER_AGENT` environment variable.
-
-## The eleven
+## The skills
 
 | command | job | what it does |
 | --- | --- | --- |
-| `/trader-scanner` | Chart Scanner | Scans thousands of charts for setups: opening-range breakouts, flags, oversold bounces. |
-| `/trader-news` | News Monitor | Tracks breaking news on every stock you watch and flags what moves it. |
-| `/trader-entry` | Entry Timer | Watches a setup bar by bar and tells you the moment to get in. |
-| `/trader-exit` | Exit Planner | Sets your stop and your target before you enter, so you know when to get out. |
-| `/trader-timemachine` | Time Machine | Replays every possible outcome of a trade before you risk a dollar: 10,000 simulated sessions plus every past time the setup fired. |
-| `/trader-risk` | Risk Manager | Checks every trade against your limits and stops anything over them. |
-| `/trader-budget` | Budget Manager | Sizes every position to your budget and your max loss per trade. |
-| `/trader-broker` | Order Executor | Sends approved orders to your broker, paper trading by default, never without your yes. |
-| `/trader-alerts` | Price Alerts | Rings when a price, a stop or the opening bell hits. |
-| `/trader-analyst` | Earnings Analyst | Reads earnings reports and sums up what changed. |
-| `/trader-pelosi` | Pelosi Tracker | Reads Congress's stock-trade disclosures the minute they are filed. |
+| `/kc-portfolio` | Portfolio Book | Holdings in two sleeves (KC's own and a family sleeve), average-cost fills, splits, reinvested dividends, valuation in USD and SGD with weights and P&L. |
+| `/kc-compliance` | Compliance Gate | KC's four trading rules plus house rules (no DBS, no SLV rebuy, whole SPYL units). PASS, PRECLEAR or BLOCK. |
+| `/kc-tranches` | Tranche Planner | Rebuilds the week's plan from the rules: gold trimmed in small slices, proceeds and weekly new money to the most underweight target, Singapore-time windows, today's GO / ADJUST / PAUSE. |
+| `/kc-morning-report` | Morning Report | The 7 AM report: Monday weekly outlook, Tuesday-Friday daily update, in plain English. |
+| `/trader-news` | News Monitor | Upstream. Headlines for the ETFs and big SOXX constituents (`--no-sec`). |
+| `/trader-alerts` | Price Alerts | Upstream. Price levels on the ETFs; now keeps `SPYL.L` and `D05.SI` suffixes intact. |
 
-## How to use it
+Removed from upstream (they serve day trading, or trade single stocks,
+which KC's rules forbid): scanner, entry, exit, time machine, risk, budget,
+broker, analyst, Pelosi tracker.
 
-Everything lands in a `trader/` folder in your project, and each skill reads
-what the last one wrote:
+## KC's rules, as encoded
 
-```
-scanner -> news -> entry -> exit -> timemachine -> budget -> risk -> broker   (one trade)
-alerts: stop, target, flat by the close                                       (while it is open)
-news / analyst / pelosi                                                        (on a schedule)
-```
+Compliance (from KC's employer's policy, as he stated it):
 
-An example, the trade in the reel: Tesla, Monday October 19 2026, real data.
+1. Funds and indexes need **at least 30 constituents** and **no constituent
+   above 20%** at the point of trade.
+2. Individual commodities and commodity trackers (GLDM) are allowed.
+3. Any **Singapore security needs pre-clearance**.
+4. **Individual non-Singapore stocks are not allowed.**
 
-1. **`/trader-scanner`** at 10:15 AM ET: of the 231 charts in the reel's
-   scan, 42 had closed above their 15-minute opening range. TSLA is one: range 354.47 to 362.18,
-   the 10:10 candle closed at 364.18, 0.55 % over the top.
-2. **`/trader-news`**: the morning's TSLA headlines, in New York time
-   ("Tesla-SpaceX Merger Mania Strikes Wall Street Ahead of Earnings", 8:04,
-   tagged earnings and deal). Tesla reports this week: a day trade is out
-   before the close, so it is not exposed to the report.
-3. **`/trader-entry`** watched TSLA bar by bar. At 10:12 it said waiting (the
-   10:10 bar was still forming). At 10:15 it said triggered: the first
-   5-minute close above the range, 364.18.
-4. **`/trader-exit`** set the plan before the entry: stop at the range's
-   midpoint, 358.32, so 5.86 a share at risk; target one times that risk,
-   370.04; flat by 3:55 PM either way.
-5. **`/trader-timemachine`** replayed the rest of the day 10,000 times, each
-   5-minute candle drawn from TSLA's own candles at that time of day over the
-   previous 59 sessions (seed 19, so anyone can repeat it): target first
-   29.4 %, stop first 25.5 %, still open at the close 45.1 %. It also re-ran
-   the same rule on those 59 real sessions: it fired 33 times, 13 hit the
-   target, 15 the stop, 5 neither. Its verdict: close to a coin flip. That is
-   the point of looking before you risk a dollar.
-6. **`/trader-budget`** with a $5,000 account and a $50 max loss per trade:
-   50 / 5.86 = 8 shares ($2,913.44). If the stop fills at 358.32, the loss is
-   $46.88. It writes one bracket order: buy 8 TSLA, stop-loss 358.32,
-   take-profit 370.04.
-7. **`/trader-risk`** checks it against your limits: the max loss, the daily
-   loss limit, trades per day, reward to risk, the entry window, position
-   size and cash. PASS or BLOCK, with the reason.
-8. **`/trader-broker`** shows you the ticket in plain words. You type yes for
-   that exact order. Claude calls your brokerage connector (Alpaca's MCP
-   server, paper account by default), and Claude's own "Allow once / Deny"
-   card asks you one more time.
-9. **`/trader-alerts`** rings on the stop, the target and at 3:55 PM to
-   flatten whatever is still open.
+House rules: DBS is hold-only; SLV was exited and is not bought back; SPYL
+(London, USD line) trades in whole units.
 
-## The tools
+Tranche rules (`kc-tranches/tranche-config.example.json`, illustrative
+numbers): a target range per group for KC's own sleeve (S&P 500 via VOO +
+SPYL with new money to SPYL, Nasdaq-100 via QQQM, semis via SOXX, gold via
+GLDM, bonds). While gold is well above its cap, sell a set amount a week in
+small slices. A fixed amount of new money each week. Pause on a
+Fed-decision night; halve a slice after a move above 3%.
 
-All standard-library Python. The data tools read public endpoints and are
-polite about it.
+A second sleeve (money KC manages for a family member) is held in the same
+account but tracked separately. It is never mixed into KC's totals,
+weights or tranches.
+
+**Real holdings, amounts and targets are not in this repo.** They live in
+`trader/`, which git ignores. Every number in the examples and tests is
+made up.
+
+## Install
+
+In Claude Code, from this branch:
 
 ```bash
-python3 trader-scanner/scan.py universe                                # ~5,900 US stocks, Nasdaq Trader
-python3 trader-scanner/scan.py daily                                   # pre-market setups, whole universe
-python3 trader-scanner/scan.py orb --at 10:15                          # opening-range breakouts so far
-python3 trader-news/news.py --tickers TSLA --hours 12                  # headlines, 8-Ks, today's move
-python3 trader-entry/entry.py check TSLA --setup orb                   # waiting / triggered / expired
-python3 trader-entry/entry.py watch TSLA --every 30                    # bar by bar until it triggers
-python3 trader-exit/exit.py plan --stop or-mid --target 1R --write     # -> trader/plan.json
-python3 trader-timemachine/timemachine.py run --write                  # 10,000 replays + the history
-python3 trader-budget/size.py --write                                  # -> trader/orders.json
-python3 trader-risk/check.py                                           # PASS / BLOCK per order
-python3 trader-broker/ticket.py show                                   # the tickets, READY or not
-python3 trader-alerts/alerts.py add --from-plan                        # stop, target, flat by close
-python3 trader-alerts/alerts.py check                                  # rings what hit, once
-python3 trader-analyst/facts.py TSLA                                   # quarters, growth, EPS
-python3 trader-pelosi/ptr.py index --member pelosi                     # her PTRs this year
+git clone -b kc-etf-rebalancer https://github.com/kaichaoang/day-trader-skill.git
+cp -r day-trader-skill/kc-* day-trader-skill/trader-* ~/.claude/skills/
 ```
+
+Or upload a single `SKILL.md` folder as a skill in the Claude app (for
+example `kc-morning-report`) if your organization allows it.
+
+Then set up your data (this folder is git-ignored, so real holdings never
+reach this public repo):
 
 ```bash
-python3 -m unittest discover -s tests -v
+mkdir -p trader
+cp kc-portfolio/portfolio.example.json  trader/portfolio.json     # then put in your real units and costs
+cp kc-tranches/tranche-config.example.json trader/tranche-config.json
+cp kc-tranches/events.example.json      trader/events.json        # refresh weekly
+cp kc-compliance/funds.example.json     trader/funds.json         # re-verify holdings data
 ```
 
-The tests run offline, on fixtures cut from real data: TSLA's 5-minute bars
-for the 60 days to October 19 2026, the 10:15 AM opening-range scan, Yahoo's
-TSLA headlines that morning, the House Clerk's 2026 index, real PTR text and
-real XBRL facts. They reproduce every number in the example above.
+## Daily use
+
+```bash
+python3 kc-portfolio/portfolio.py trade sell GLDM 6 80.00              # record last night's fills
+python3 kc-portfolio/portfolio.py trade buy SPYL.L 34 19.00
+python3 kc-portfolio/portfolio.py value --write                       # or --prices trader/prices.json
+python3 kc-tranches/tranches.py --write                               # today's call + the week
+python3 kc-compliance/compliance.py                                   # check today's orders
+```
+
+Example output (made-up holdings, the example config):
+
+```
+Week of 2026-10-19   today 2026-10-20
+Gold 56.1% (max 10%): sell ~$1000 this week (sold so far $0)
+New money ~$156 -> SPYL.L (sp500)
+
+ Mon 10-19  -
+            past: anything planned here and not reported is rolled forward
+>Tue 10-20  sell 6.25 GLDM (~$500) after the 21:30 SGT US open (give it ~15 min); buy 34 SPYL.L (~$656) before London closes at 23:30 SGT, or the next day from 15:00 SGT
+ Wed 10-21  -
+ Thu 10-22  sell 6.25 GLDM (~$500) after the 21:30 SGT US open (give it ~15 min); buy 26 SPYL.L (~$500) before London closes at 23:30 SGT, or the next day from 15:00 SGT
+            trade after US jobless claims (Thu 20:30 SGT)
+ Fri 10-23  -
+
+TODAY: GO - no major event and no move above 3%
+pause on a 'pause' event night (e.g. a Fed decision); halve a slice if the asset moved more than 3% overnight; never trade D05.SI, SLV
+```
+
+Tests (offline):
+
+```bash
+cd tests && python3 -m unittest
+```
 
 ## Fine print
 
-**Not financial advice.** This is software that reads public data and does
-arithmetic. It does not know your situation and it cannot see the future.
-Most people who day trade lose money. You can lose money. Decide for
-yourself, and talk to a licensed professional if you need advice.
+**Not financial advice.** This is software that does arithmetic on public
+prices and on rules KC chose. It cannot see the future. The compliance gate
+checks KC's summary of his employer's policy mechanically; his compliance
+team has the final word.
 
-**No trade goes through until you say yes.** Only `/trader-broker` can lead to
-an order, and only after `/trader-risk` passes that exact order and you type
-yes for it in the chat. Set your brokerage tool to "Needs approval" in Claude
-(Customize, Connectors, tool permissions), never "Always allow", so Claude's
-own "Allow once / Deny" card is a second check. No options, margin, short
-selling or leverage unless you turn them on.
+**The data is free and unofficial.** Yahoo's chart endpoint can lag, change
+or rate-limit. Fund holdings data in `funds.json` goes stale: re-verify it
+before trading, especially SOXX. Check prices against the broker before
+acting.
 
-**Paper first.** `"paper": true` is the default in `config.example.json`, and
-Alpaca's MCP server defaults to its paper account. Keys live in environment
-variables, never in the chat.
-
-**The Time Machine is a simulation, not a prediction.** It is built from the
-stock's own last 60 days of 5-minute bars. The future can do things those 60
-days never did: an earnings report, a halt, a headline. Treat its odds as a
-reality check, never as a promise.
-
-**A stop is a plan, not a guarantee.** In a fast market or across a gap, a
-stop order can fill well past its price. The max loss shown is the loss at
-the stop price.
-
-**The data is free and unofficial.** Yahoo Finance's chart endpoint is not an
-official API: it can lag, change or rate-limit you. The scanner and the entry
-timer read 1-minute or 5-minute bars, not every tick. Check anything that
-matters against your broker before you act on it.
-
-**Day-trading rules.** FINRA removed the $25,000 pattern-day-trader minimum
-on June 4, 2026 (Regulatory Notice 26-10), and brokers may phase the change
-in until October 20, 2027, so yours may still apply the old rule. If it does,
-set `"pdt_guard": true` and `/trader-risk` counts your day trades.
-
-**Congress's trades are public, not inside information.** Members must disclose
-trades over $1,000 within 45 days (the STOCK Act). The Pelosi skill reads those
-public filings the minute they post.
-
-**Taxes.** Day-trading gains are short-term gains, and frequent trading makes
-wash sales likely. Nothing here is tax advice.
-
-## Files
-
-```
-trader-scanner/     SKILL.md, scan.py
-trader-news/        SKILL.md, news.py
-trader-entry/       SKILL.md, entry.py
-trader-exit/        SKILL.md, exit.py
-trader-timemachine/ SKILL.md, timemachine.py
-trader-risk/        SKILL.md, check.py
-trader-budget/      SKILL.md, size.py, config.example.json, targets.example.json
-trader-broker/      SKILL.md, ticket.py, claude_desktop_config.example.json
-trader-alerts/      SKILL.md, alerts.py, alerts.example.json
-trader-analyst/     SKILL.md, facts.py, metrics.example.json
-trader-pelosi/      SKILL.md, ptr.py
-tests/              unittest suite + offline fixtures
-```
-
-MIT. Made by [Jake Schincariol](https://opusjake.ai).
+MIT. Original pack by [Jake Schincariol](https://opusjake.ai); this branch by KC.

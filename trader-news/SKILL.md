@@ -9,11 +9,16 @@ description: >-
   analyst, deal, halt, regulatory, macro...) and never repeats one. Use when
   the user says "any news on TSLA", "why is this moving", "what's the news on
   my watchlist", "morning briefing", "pre-market news", "monitor the news",
-  "did anything break", "check the 8-Ks", or after /trader-scanner finds setups.
+  "did anything break", or for the morning report's news on KC's ETFs.
 argument-hint: "[tickers]"
 ---
 
 # trader-news
+
+> **KC branch:** kept for headlines on KC's holdings. ETFs have no 8-Ks, so
+> run it with `--no-sec --tickers GLDM QQQM SOXX VOO` (add `NVDA AMD AVGO`
+> etc. for big SOXX constituents around their earnings). This is reading
+> only: individual stocks are never traded on this branch.
 
 A chart can look perfect and still be about to gap on an earnings date, a
 halt or a lawsuit. Before a setup becomes a trade, this skill reads the two
@@ -33,9 +38,8 @@ python3 "${CLAUDE_SKILL_DIR}/news.py" --no-sec --json
 
 | file / feed | what |
 | --- | --- |
-| `--tickers`, else `trader/watchlist.json` | the scanner's hits (trader-scanner) |
-| `trader/plan.json` | the trade you are planning (trader-exit) |
-| `trader/portfolio.json` | what you hold (trader-broker records fills there) |
+| `--tickers`, else `trader/watchlist.json` | the tickers to read |
+| `trader/portfolio.json` | what KC holds (kc-portfolio) |
 | Yahoo Finance headline RSS | `https://feeds.finance.yahoo.com/rss/2.0/headline?s=TSLA&region=US&lang=en-US` |
 | Yahoo Finance chart endpoint | the last price against yesterday's close (unofficial, can lag) |
 | SEC EDGAR company Atom feed | 8-K by default (`--forms 8-K,10-Q` for more); needs `sec_user_agent` in `trader/config.json` or `SEC_USER_AGENT`, else filings are skipped with a note |
@@ -69,9 +73,9 @@ python3 "${CLAUDE_SKILL_DIR}/news.py" --no-sec --json
 3. Write a short brief, per ticker: what happened, the source and link, the
    move, and one line on why it matters to the setup (for example "earnings
    are this week: an overnight gap can jump past any stop").
-4. If a story changes the picture, say so before `/trader-entry` and
-   `/trader-exit`: an earnings date inside the trade, a halt, an offering.
-   Never act on a headline alone.
+4. If a story changes the picture, say so in the report before /kc-tranches
+   gives today's call: a Fed surprise, a big constituent's earnings, a gold
+   shock. Never act on a headline alone.
 
 During the session: `/loop 15m /trader-news`, or a scheduled task each
 morning before the open.
@@ -100,5 +104,5 @@ ticker has no news, say so rather than padding the brief.
 ## Safety
 
 Education and tooling, not financial advice. This skill only reads and
-reports. Nothing places an order except `/trader-broker`, after
-`/trader-risk` passes and the user types an explicit yes for that order.
+reports. Nothing on this branch places an order: KC trades himself, after
+/kc-compliance passes the suggestion.

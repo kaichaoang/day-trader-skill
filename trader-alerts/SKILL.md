@@ -11,12 +11,21 @@ description: >-
   CSV) one ticker at a time, and writes trader/prices.json for sizing and the
   risk check. Use when the user says "alert me when", "tell me if TSLA hits",
   "watch my stop", "watch my trade", "remind me to close by 3:55", "is the
-  market open", "when does the market open", "get me a price", or right
-  after /trader-exit writes a plan.
+  market open", "when does the market open", "get me a price", or to watch
+  a level on one of KC's ETFs (for example a GLDM price where a lot turns
+  a profit).
 argument-hint: "[ticker] [price]"
 ---
 
 # trader-alerts
+
+> **KC branch:** kept from the day-trading pack for price and time alerts on
+> KC's ETFs (`GLDM`, `QQQM`, `SOXX`, `VOO`, `SPYL.L`). The clock is New York
+> time and NYSE hours; for SPYL the London quote is fetched but the
+> opening-bell and flat-by-close rules do not apply. `--from-plan` came from
+> the removed trader-exit skill and is not used on this branch. An alert never
+> trades: when one rings, tell KC, then run /kc-tranches and /kc-compliance
+> if he wants to act.
 
 Price Alerts watches the numbers so the user does not have to stare at a
 chart. An alert is information, never an order: when a stop alert rings,
@@ -48,10 +57,10 @@ reads saved quote files instead of the network.
 
 | file | what |
 | --- | --- |
-| `trader/plan.json` | the trade from trader-exit, for `add --from-plan` |
+| `trader/plan.json` | upstream day-trade plan for `add --from-plan` (unused on this branch) |
 | `trader/alerts.json` | the rules (`alerts.example.json` in this folder) |
 | `trader/state/alerts.json` | which rules rang and when, so each rings once |
-| `trader/prices.json` | the latest quotes, merged in, for trader-budget and trader-risk |
+| `trader/prices.json` | the latest quotes, merged in, for kc-portfolio `--prices` |
 | `trader/portfolio.json` | the tickers held, for `quote --holdings` |
 
 ## Rule types
@@ -80,7 +89,7 @@ close, so "flat by close" at 15:55 rings at 12:55 on those days.
 - Free quotes are unofficial, delayed and can lag. They are fine for alerts
   and for checking a size, not for timing an order. The broker's price is the
   one that fills. Each price in `trader/prices.json` keeps its quote time, and
-  trader-risk only uses one under 15 minutes old.
+  check a quote's time before using it.
 - If both are down, read the price from the broker connector (Alpaca
   `get_stock_snapshot`, IBKR `get_price_snapshot`) and write it into
   `trader/prices.json` as `{"as_of": "...Z", "prices": {"TSLA": 366.48}}`.
@@ -103,17 +112,13 @@ holiday list is unknown.
 
 ## Steps
 
-1. Right after trader-exit writes the plan, run `add --from-plan`. Confirm
-   the three alerts back to the user: the stop, the target and the flat-by time.
-2. Run `check` while the trade is open: every few minutes from a Claude
-   scheduled task or `/loop`. Each run fetches only the tickers in today's
-   rules and rings each alert once. A check reads the latest delayed quote;
-   it is not a live feed, and a price can pass a level between two checks.
-3. Tell the user what rang in one line each. A stop or target alert means the
-   bracket order has probably filled: check `get_open_position` and record the
-   fill with trader-broker. "Flat by close" means close anything still open:
-   trader-broker `flatten`, then trader-risk, then the user's yes. Never act
-   for them.
+1. Add the levels KC cares about, for example
+   `add --symbol GLDM --above 95 --note "back to my average cost"`, and
+   confirm each rule back to him: ticker, type, level, day.
+2. Run `check` from a scheduled task. Each run fetches only the tickers in
+   the rules and rings each alert once. Quotes are delayed; a price can pass
+   a level between two checks.
+3. Tell KC what rang in one line each, as a fact. Never act for him.
 
 ## Example: the reel
 
@@ -150,11 +155,6 @@ live, and never predicts where a price is going.
 
 ## Safety
 
-- Education and tooling, not financial advice. A PASS is a rules check, not a recommendation.
-- Paper trading by default (`"paper": true`). Going live is the user's own decision, in their own config.
-- Nothing in this pack places an order except trader-broker, and only when all three hold: trader-risk
-  passed that exact order today, the user typed an explicit yes for that one order in the chat, and the
-  user clicked Allow once on Claude's own card because the order tool is set to "Needs approval"
-  (Customize > Connectors > tool permissions). Never set an order tool to "Always allow".
-- No options, margin, short selling or leverage unless the config allows it and the user confirms.
-- Broker keys live in environment variables or the Claude Desktop config, never in the chat.
+- Education and tooling, not financial advice.
+- Nothing on this branch places an order. Every trade is KC's own, placed
+  by him at his broker after /kc-compliance passes it.

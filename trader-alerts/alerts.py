@@ -198,7 +198,11 @@ def stooq_url(sym):
 
 
 def yahoo_url(sym, host=YAHOO_HOSTS[0]):
-    return "https://%s/v8/finance/chart/%s?range=1d&interval=1d" % (host, sym.upper().replace(".", "-"))
+    sym = sym.upper()
+    # BRK.B -> BRK-B (US share classes); exchange suffixes like SPYL.L and D05.SI stay as they are
+    if re.match(r"^[A-Z]+\.[A-Z]$", sym) and not sym.endswith(".L"):
+        sym = sym.replace(".", "-")
+    return "https://%s/v8/finance/chart/%s?range=1d&interval=1d" % (host, sym)
 
 
 def parse_stooq(text, sym):

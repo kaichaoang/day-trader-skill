@@ -1,0 +1,10 @@
+{
+  "_comment": "Scheduled events in Singapore time. impact: pause = no new tranche that night; wait = trade after the release; info = mention only. The trading night of day D runs 15:00 SGT on D to 05:00 SGT on D+1.",
+  "events": [
+    {"date_sgt": "2026-10-20", "time_sgt": "20:30", "label": "US housing starts", "impact": "info"},
+    {"date_sgt": "2026-10-22", "time_sgt": "04:00", "label": "Texas Instruments + Lam Research earnings (SOXX)", "impact": "info"},
+    {"date_sgt": "2026-10-22", "time_sgt": "20:30", "label": "US jobless claims", "impact": "wait"},
+    {"date_sgt": "2026-10-23", "time_sgt": "21:45", "label": "US flash PMIs", "impact": "info"},
+    {"date_sgt": "2026-10-29", "time_sgt": "02:00", "label": "FOMC rate decision", "impact": "pause"}
+  ]
+}

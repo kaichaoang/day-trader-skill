@@ -1,0 +1,18 @@
+{
+  "_comment": "Illustrative numbers only. Copy to trader/portfolio.json and put your real units and costs there; trader/ is git-ignored so real holdings never reach this public repo.",
+  "fx": {"USDSGD": 1.28},
+  "sleeves": {
+    "kc": {"label": "KC (own)"},
+    "family": {"label": "Family sleeve", "invested_usd": 3000.00, "target": {"VOO": 80, "GLDM": 20}}
+  },
+  "positions": [
+    {"ticker": "D05.SI", "name": "DBS", "currency": "SGD", "group": "sg_bank", "sleeve": "kc", "units": 100, "avg_cost": 60.00},
+    {"ticker": "GLDM", "name": "GLDM", "currency": "USD", "group": "gold", "sleeve": "kc", "units": 200, "avg_cost": 90.00},
+    {"ticker": "QQQM", "name": "QQQM", "currency": "USD", "group": "nasdaq100", "sleeve": "kc", "units": 5, "avg_cost": 300.00},
+    {"ticker": "SOXX", "name": "SOXX", "currency": "USD", "group": "semis", "sleeve": "kc", "units": 4, "avg_cost": 600.00},
+    {"ticker": "VOO", "name": "VOO", "currency": "USD", "group": "sp500", "sleeve": "kc", "units": 4, "avg_cost": 650.00},
+    {"ticker": "SPYL.L", "name": "SPYL", "currency": "USD", "group": "sp500", "sleeve": "kc", "units": 20, "avg_cost": 19.50},
+    {"ticker": "GLDM", "name": "GLDM", "currency": "USD", "group": "gold", "sleeve": "family", "units": 30, "avg_cost": 92.00}
+  ],
+  "ledger": []
+}

@@ -1,0 +1,24 @@
+{
+  "_comment": "Illustrative numbers only. Copy to trader/tranche-config.json (git-ignored) and put your real targets and amounts there. Targets are % of KC's own sleeve; other sleeves are never included.",
+  "targets_pct": {
+    "sp500":     [35, 45],
+    "nasdaq100": [10, 15],
+    "semis":     [5, 10],
+    "gold":      [5, 10],
+    "bonds":     [10, 10]
+  },
+  "buy_priority": ["sp500", "nasdaq100", "bonds"],
+  "buy_with": {"sp500": "SPYL.L", "nasdaq100": "QQQM", "bonds": null},
+  "whole_units": ["SPYL.L"],
+  "new_money_sgd_per_week": 200,
+  "gold": {
+    "ticker": "GLDM",
+    "trigger_pp_above_max": 5,
+    "weekly_sell_usd": 1000,
+    "slice_usd": 500,
+    "sell_days": ["Tue", "Thu"]
+  },
+  "spare_day": "Fri",
+  "pause_move_pct": 3,
+  "never_trade": ["D05.SI", "SLV"]
+}
